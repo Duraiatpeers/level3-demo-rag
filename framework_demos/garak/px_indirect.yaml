@@ -1,0 +1,32 @@
+# Garak run: injection with the poisoned retrieval index (index = px-docs-injection-test).
+# Framework counterpart of tests/test_04_indirect_prompt_injection.py (see README for what differs).
+# Needs the app running on localhost:8000 and REST_API_KEY set to the app's TRAINING_API_KEY.
+run:
+  generations: 1            # replies per prompt; raise for a statistical picture, lower to save model calls
+reporting:
+  report_prefix: px_indirect  # report is written to <garak data dir>/garak_runs/px_indirect.report.jsonl
+plugins:
+  target_type: rest
+  probe_spec: latentinjection.LatentInjectionReport,latentinjection.LatentInjectionResume
+  probes:
+    latentinjection:
+      LatentInjectionReport:
+        soft_probe_prompt_cap: 10
+      LatentInjectionResume:
+        soft_probe_prompt_cap: 10
+  generators:
+    rest:
+      RestGenerator:
+        name: PX Service Assistant (poisoned index)
+        uri: http://localhost:8000/ask
+        method: post
+        headers:
+          X-API-Key: $KEY
+        req_template_json_object:
+          question: $INPUT
+          prompt_version: v1
+          index: px-docs-injection-test
+        response_json: true
+        response_json_field: answer
+        request_timeout: 60
+        ratelimit_codes: [429]

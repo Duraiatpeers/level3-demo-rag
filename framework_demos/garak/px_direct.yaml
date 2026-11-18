@@ -1,0 +1,32 @@
+# Garak run: direct injection / jailbreak against the PX Service Assistant.
+# Framework counterpart of tests/test_03_direct_prompt_injection.py.
+# Needs the app running on localhost:8000 and REST_API_KEY set to the app's TRAINING_API_KEY.
+run:
+  generations: 1            # replies per prompt; raise for a statistical picture, lower to save model calls
+reporting:
+  report_prefix: px_direct  # report is written to <garak data dir>/garak_runs/px_direct.report.jsonl
+plugins:
+  target_type: rest
+  probe_spec: dan.DanInTheWild,latentinjection.LatentJailbreak
+  probes:
+    dan:
+      DanInTheWild:
+        soft_probe_prompt_cap: 20     # the full probe is 256 prompts = 256 model calls
+    latentinjection:
+      LatentJailbreak:
+        soft_probe_prompt_cap: 10
+  generators:
+    rest:
+      RestGenerator:
+        name: PX Service Assistant (direct)
+        uri: http://localhost:8000/ask
+        method: post
+        headers:
+          X-API-Key: $KEY
+        req_template_json_object:
+          question: $INPUT
+          prompt_version: v1
+        response_json: true
+        response_json_field: answer
+        request_timeout: 60
+        ratelimit_codes: [429]
